@@ -15,6 +15,7 @@ cloudinary.config(
     secure=True
 )
 
+
 def upload_video_to_cloudinary(video_path: str):
     """
     Uploads a video to Cloudinary and returns the secure URL.
