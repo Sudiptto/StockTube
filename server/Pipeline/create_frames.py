@@ -4,7 +4,7 @@ import numpy as np
 import cv2
 
 # generate ticker1, ticker2, title 
-def generate_frames(df, ticker1, ticker2, title, video_size=(1280, 720)):
+def generate_frames(df, ticker1, ticker2, title, video_size=(720, 1280)):
     """
     Generate video frames from stock dataframe.
     Returns list of frames (each a numpy array).
@@ -18,6 +18,7 @@ def generate_frames(df, ticker1, ticker2, title, video_size=(1280, 720)):
 
         ax.plot(df.index[:i], df[f"{ticker1}_value"][:i], color="blue", label=ticker1)
         ax.plot(df.index[:i], df[f"{ticker2}_value"][:i], color="orange", label=ticker2)
+
         ax.legend(loc="upper left")
         ax.set_xlabel("Date")
         ax.set_ylabel("Value ($)")
