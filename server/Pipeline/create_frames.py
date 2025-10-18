@@ -11,7 +11,7 @@ def generate_frames(df, ticker1, ticker2, title, video_size=(1080, 1920)):
     frames = []
     total_points = len(df)
     VIDEO_WIDTH, VIDEO_HEIGHT = video_size  # width first!
-    print(df.tail())
+    #print(df.tail())
 
     # ⚙️ Visual style tweaks for shortform
     plt.rcParams.update({

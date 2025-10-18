@@ -4,6 +4,7 @@ import os
 from compare_stock import get_stock_data
 from create_frames import generate_frames
 from create_video import create_video_with_moviepy
+from upload import upload_video_to_cloudinary
 
 def run_pipeline(ticker1="AAPL", ticker2="MSFT", start_date="2020-01-01", end_date="2024-12-31",
                  frequency="daily", investment = 100, seconds=10, output_path="output.mp4", title="MSFT V APPLE"):
@@ -30,7 +31,12 @@ def run_pipeline(ticker1="AAPL", ticker2="MSFT", start_date="2020-01-01", end_da
     create_video_with_moviepy(frames, output_path=output_path, seconds=seconds)
     print("[PIPELINE] Video successfully created 🎥")
 
-    #compressed_video(output_path, "compressed_" + output_path)
+    # ☁️ Upload to Cloudinary
+    cloud_url = upload_video_to_cloudinary(output_path)
+    if cloud_url:
+        print("Cloudinary URL:", cloud_url)
+
+    return cloud_url
 
 
 if __name__ == "__main__":
