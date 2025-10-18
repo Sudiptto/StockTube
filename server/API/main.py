@@ -38,13 +38,11 @@ def stock_req():
         investment = float(payload.get("one-time-investment", 100))
         seconds = int(payload.get("vid_duration", 10))
         
-        # Create title from tickers
+        # Create title from tickers (TITLE -> CAN CHANGE ... )
         title = f"{ticker1} vs {ticker2}"
         
-        # Generate unique output filename
-        import uuid
-        output_filename = f"stock_video_{uuid.uuid4().hex[:8]}.mp4"
-        output_path = os.path.join(os.path.dirname(__file__), '..', 'Pipeline', output_filename)
+        #  keep like this .. 
+        output_path = "output.mp4"
         
         print(f"[API] Starting pipeline for {ticker1} vs {ticker2}")
         
