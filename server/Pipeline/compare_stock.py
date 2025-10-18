@@ -3,7 +3,7 @@ import pandas as pd
 
 """Compare growth of two stocks for a one-time investment. (WEEKLY, DAILY, MONTHLY)"""
 
-def compare_stocks(ticker1: str, ticker2: str,
+def get_stock_data(ticker1: str, ticker2: str,
                    start_date: str, end_date: str,
                    investment: float,
                    freq: str = "daily"):  # "daily", "weekly", or "monthly"
@@ -54,7 +54,7 @@ def compare_stocks(ticker1: str, ticker2: str,
 
 
 if __name__ == "__main__":
-    df = compare_stocks("AAPL", "MSFT",
+    df = get_stock_data("AAPL", "MSFT",
                         "2024-12-25", "2024-12-31",
                         1000, freq="daily")  # change to "weekly" or "daily"
     print(df.tail())
