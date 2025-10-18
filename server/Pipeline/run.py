@@ -3,7 +3,7 @@
 import os
 from compare_stock import get_stock_data
 from create_frames import generate_frames
-from create_video import create_video_from_frames
+from create_video import create_video_with_moviepy
 from compress_video import compressed_video
 
 def run_pipeline(ticker1="AAPL", ticker2="MSFT", start_date="2020-01-01", end_date="2024-12-31",
@@ -28,10 +28,10 @@ def run_pipeline(ticker1="AAPL", ticker2="MSFT", start_date="2020-01-01", end_da
     print(f"[PIPELINE] {len(frames)} frames generated ✅")
 
     # STEP 3: Compile frames into video
-    create_video_from_frames(frames, output_path=output_path, seconds=seconds)
+    create_video_with_moviepy(frames, output_path=output_path, seconds=seconds)
     print("[PIPELINE] Video successfully created 🎥")
 
-    compressed_video(output_path, "compressed_" + output_path)
+    #compressed_video(output_path, "compressed_" + output_path)
 
 
 if __name__ == "__main__":

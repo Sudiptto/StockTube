@@ -1,33 +1,37 @@
-import cv2
-import os
+from moviepy import ImageSequenceClip
 
-
-"""
-    Create a video from a list of frames.
-    Args:
-        frames (list): list of np.ndarray frames.
-        output_path (str): output video path.
-        seconds (int): total duration of video (default 60s).
-        fps (int): frames per second (optional, auto-calculated if None).
-        
+def create_video_with_moviepy(frames, output_path="output.mp4", seconds=60, fps=None, bitrate="1500k"):
     """
-def create_video_from_frames(frames, output_path="output.mp4", seconds=60, fps=None):
+    Create a video from frames using MoviePy (compressed, smaller file size).
     
+    Args:
+        frames (list): list of np.ndarray (BGR format from OpenCV)
+        output_path (str): output file path
+        seconds (int): total video duration
+        fps (float): frames per second (auto-calculated if None)
+        bitrate (str): compression bitrate (e.g. "800k", "1500k", "2500k")
+    """
     if not frames:
         raise ValueError("No frames provided")
 
-    height, width, _ = frames[0].shape
-
-    # Auto calculate fps if not given
+    total_frames = len(frames)
     if fps is None:
-        fps = len(frames) / seconds
+        fps = total_frames / seconds
 
-    print(f"[INFO] Generating video at {fps:.2f} FPS ({seconds}s total)")
+    print(f"[INFO] Generating video with MoviePy at {fps:.2f} FPS ({seconds}s total)")
+    
+    # Convert BGR → RGB for MoviePy
+    rgb_frames = [frame[:, :, ::-1] for frame in frames]
 
-    out = cv2.VideoWriter(output_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (width, height))
-
-    for frame in frames:
-        out.write(frame)
-
-    out.release()
+    # Create MoviePy clip
+    clip = ImageSequenceClip(rgb_frames, fps=fps)
+    clip.write_videofile(
+        output_path,
+        codec="libx264",
+        audio=False,
+        bitrate=bitrate,
+        ffmpeg_params=["-movflags", "+faststart"],
+        threads=4
+    )
+    clip.close()
     print(f"[INFO] Video saved to {output_path}")
