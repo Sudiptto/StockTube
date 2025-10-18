@@ -15,18 +15,61 @@ import { VideoPreview } from "@/components/video-preview"
 import { Film } from "lucide-react" // Declared Film variable here
 
 export function VideoCreationStudio() {
-  const [stock1, setStock1] = React.useState("")
-  const [stock2, setStock2] = React.useState("")
-  const [startDate, setStartDate] = React.useState<Date>()
-  const [endDate, setEndDate] = React.useState<Date>()
-  const [timeline, setTimeline] = React.useState("daily")
-  const [investment, setInvestment] = React.useState("1000")
-  const [duration, setDuration] = React.useState("30")
-  const [template, setTemplate] = React.useState("subway")
+  const [stock1, setStock1] = React.useState("NFLX")
+  const [stock2, setStock2] = React.useState("DIS")
+  const [startDate, setStartDate] = React.useState<Date>(new Date("2023-06-01"))
+  const [endDate, setEndDate] = React.useState<Date>(new Date("2024-12-31"))
+  const [timeline, setTimeline] = React.useState("weekly")
+  const [investment, setInvestment] = React.useState("500")
+  const [duration, setDuration] = React.useState("10")
   const [showPreview, setShowPreview] = React.useState(false)
+  const [isLoading, setIsLoading] = React.useState(false)
+  const [videoUrl, setVideoUrl] = React.useState<string | null>(null)
+  const [error, setError] = React.useState<string | null>(null)
 
-  const handleGenerate = () => {
-    setShowPreview(true)
+  const handleGenerate = async () => {
+    if (!stock1 || !stock2 || !startDate || !endDate) {
+      setError("Please fill in all required fields")
+      return
+    }
+
+    setIsLoading(true)
+    setError(null)
+    setVideoUrl(null)
+
+    try {
+      const payload = {
+        stock1: stock1.toUpperCase(),
+        stock2: stock2.toUpperCase(),
+        start_date: format(startDate, "yyyy-MM-dd"),
+        end_date: format(endDate, "yyyy-MM-dd"),
+        daily_freq: timeline,
+        "one-time-investment": parseInt(investment),
+        vid_duration: parseInt(duration)
+      }
+
+      const response = await fetch("http://127.0.0.1:5000/stock_req", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      })
+
+      const data = await response.json()
+
+      if (data.status === "success") {
+        setVideoUrl(data.video_url)
+        setShowPreview(true)
+      } else {
+        setError(data.message || "Failed to generate video")
+      }
+    } catch (err) {
+      setError("Failed to connect to the API. Make sure the server is running.")
+      console.error("API Error:", err)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -137,24 +180,13 @@ export function VideoCreationStudio() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="template">Background Template</Label>
-              <Select value={template} onValueChange={setTemplate}>
-                <SelectTrigger id="template">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="subway">Subway Surfer</SelectItem>
-                  <SelectItem value="minecraft">Minecraft</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
               <Label htmlFor="duration">Video Duration (seconds)</Label>
               <Select value={duration} onValueChange={setDuration}>
                 <SelectTrigger id="duration">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="10">10 seconds</SelectItem>
                   <SelectItem value="15">15 seconds</SelectItem>
                   <SelectItem value="30">30 seconds</SelectItem>
                   <SelectItem value="45">45 seconds</SelectItem>
@@ -162,17 +194,48 @@ export function VideoCreationStudio() {
                 </SelectContent>
               </Select>
             </div>
-            <Button className="w-full" size="lg" onClick={handleGenerate}>
-              Generate Video
+            <Button 
+              className="w-full" 
+              size="lg" 
+              onClick={handleGenerate}
+              disabled={isLoading}
+            >
+              {isLoading ? "Generating Video..." : "Generate Video"}
             </Button>
+            {error && (
+              <div className="text-sm text-red-500 bg-red-50 p-3 rounded-md">
+                {error}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
 
       <div className="space-y-6">
-        {showPreview ? (
+        {isLoading ? (
+          <Card className="flex h-[600px] items-center justify-center">
+            <CardContent className="text-center">
+              <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-primary mx-auto"></div>
+              <p className="mt-4 text-lg font-medium">Loading...</p>
+              <p className="text-sm text-muted-foreground">Generating your video, please wait</p>
+            </CardContent>
+          </Card>
+        ) : showPreview && videoUrl ? (
           <>
-            <VideoPreview stock1={stock1 || "MSFT"} stock2={stock2 || "GOOG"} template={template} />
+            <Card className="overflow-hidden">
+              <CardContent className="p-0">
+                <div className="relative aspect-[9/16] bg-black">
+                  <video 
+                    src={videoUrl} 
+                    controls 
+                    className="w-full h-full object-cover"
+                    poster=""
+                  >
+                    Your browser does not support the video tag.
+                  </video>
+                </div>
+              </CardContent>
+            </Card>
             <Card>
               <CardHeader>
                 <CardTitle className="gradient-text">Export Options</CardTitle>
@@ -180,7 +243,11 @@ export function VideoCreationStudio() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid gap-3">
-                  <Button className="w-full bg-transparent" variant="outline">
+                  <Button 
+                    className="w-full bg-transparent" 
+                    variant="outline"
+                    onClick={() => window.open(videoUrl, '_blank')}
+                  >
                     <Download className="mr-2 h-4 w-4" />
                     Download Video
                   </Button>

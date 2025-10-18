@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 import sys
 import os
 
@@ -10,6 +11,7 @@ sys.path.append(pipeline_path)
 from run import run_pipeline
 
 app = Flask(__name__)
+CORS(app)
 
 def normalize_input(data):
     return {
