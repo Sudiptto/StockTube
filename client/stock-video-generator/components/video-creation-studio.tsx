@@ -24,9 +24,127 @@ export function VideoCreationStudio() {
   const [duration, setDuration] = React.useState("30")
   const [template, setTemplate] = React.useState("subway")
   const [showPreview, setShowPreview] = React.useState(false)
+  const [isLoadingAI, setIsLoadingAI] = React.useState(false)
 
   const handleGenerate = () => {
     setShowPreview(true)
+  }
+
+  const handleAISuggestions = () => {
+    setIsLoadingAI(true)
+    
+    // Simulate loading for better UX
+    setTimeout(() => {
+      // Curated list of trending stock comparisons with optimal settings
+      const trendingComparisons = [
+        {
+          stock1: "NVDA",
+          stock2: "AMD", 
+          timeline: "daily",
+          investment: "2500",
+          duration: "45",
+          template: "subway",
+          reasoning: "AI chip rivalry - NVIDIA vs AMD battle for AI dominance"
+        },
+        {
+          stock1: "AAPL",
+          stock2: "MSFT",
+          timeline: "weekly", 
+          investment: "5000",
+          duration: "60",
+          template: "minecraft",
+          reasoning: "Tech giants showdown - Apple vs Microsoft market cap race"
+        },
+        {
+          stock1: "TSLA",
+          stock2: "RIVN",
+          timeline: "daily",
+          investment: "1500",
+          duration: "30", 
+          template: "subway",
+          reasoning: "EV revolution - Tesla vs Rivian electric future battle"
+        },
+        {
+          stock1: "META",
+          stock2: "GOOGL",
+          timeline: "daily",
+          investment: "3000", 
+          duration: "45",
+          template: "minecraft",
+          reasoning: "Social media vs search - Meta's metaverse vs Google's AI"
+        },
+        {
+          stock1: "AMZN",
+          stock2: "NFLX",
+          timeline: "weekly",
+          investment: "2000",
+          duration: "30",
+          template: "subway", 
+          reasoning: "Streaming wars - Amazon Prime vs Netflix content battle"
+        },
+        {
+          stock1: "COIN",
+          stock2: "HOOD",
+          timeline: "daily",
+          investment: "1000",
+          duration: "15",
+          template: "subway",
+          reasoning: "Trading platforms - Coinbase vs Robinhood retail trading"
+        },
+        {
+          stock1: "DIS",
+          stock2: "NFLX", 
+          timeline: "monthly",
+          investment: "4000",
+          duration: "60",
+          template: "minecraft",
+          reasoning: "Entertainment empire - Disney+ vs Netflix streaming dominance"
+        },
+        {
+          stock1: "PLTR",
+          stock2: "SNOW",
+          timeline: "daily", 
+          investment: "1200",
+          duration: "30",
+          template: "subway",
+          reasoning: "Data analytics war - Palantir vs Snowflake big data race"
+        }
+      ]
+      
+      // Randomly select one of the trending comparisons
+      const selectedComparison = trendingComparisons[Math.floor(Math.random() * trendingComparisons.length)]
+      
+      // Auto-fill ALL form fields
+      setStock1(selectedComparison.stock1)
+      setStock2(selectedComparison.stock2) 
+      setTimeline(selectedComparison.timeline)
+      setInvestment(selectedComparison.investment)
+      setDuration(selectedComparison.duration)
+      setTemplate(selectedComparison.template)
+      
+      // Set smart date ranges based on timeline
+      const endDate = new Date()
+      const startDate = new Date()
+      
+      if (selectedComparison.timeline === "daily") {
+        // Last 3 months for daily data
+        startDate.setMonth(startDate.getMonth() - 3)
+      } else if (selectedComparison.timeline === "weekly") {
+        // Last 6 months for weekly data  
+        startDate.setMonth(startDate.getMonth() - 6)
+      } else {
+        // Last 12 months for monthly data
+        startDate.setMonth(startDate.getMonth() - 12)
+      }
+      
+      setStartDate(startDate)
+      setEndDate(endDate)
+      
+      // Log the suggestion reasoning
+      console.log("🎯 Smart Suggestion:", selectedComparison.reasoning)
+      
+      setIsLoadingAI(false)
+    }, 800) // Simulate realistic loading time
   }
 
   return (
@@ -58,10 +176,6 @@ export function VideoCreationStudio() {
                 />
               </div>
             </div>
-            <Button variant="outline" className="w-full bg-transparent">
-              <Sparkles className="mr-2 h-4 w-4" />
-              Get AI Suggestions
-            </Button>
           </CardContent>
         </Card>
 
@@ -162,6 +276,15 @@ export function VideoCreationStudio() {
                 </SelectContent>
               </Select>
             </div>
+            <Button 
+              variant="outline" 
+              className="w-full bg-transparent mb-3" 
+              onClick={handleAISuggestions}
+              disabled={isLoadingAI}
+            >
+              <Sparkles className="mr-2 h-4 w-4" />
+              {isLoadingAI ? "Getting Smart Suggestions..." : "Get Smart Suggestions"}
+            </Button>
             <Button className="w-full" size="lg" onClick={handleGenerate}>
               Generate Video
             </Button>
