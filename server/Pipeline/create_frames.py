@@ -54,7 +54,17 @@ def generate_frames(df, ticker1, ticker2, title, video_size=(1080, 1920)):
         fig.canvas.draw()
         buf = np.frombuffer(fig.canvas.tostring_argb(), dtype=np.uint8)
         w, h = fig.canvas.get_width_height()
-        buf = buf.reshape(h, w, 4)
+        # Ensure buffer size matches dimensions
+        expected_size = h * w * 4
+        if len(buf) != expected_size:
+            # Recalculate dimensions from actual buffer size
+            total_pixels = len(buf) // 4
+            # Maintain 9:16 aspect ratio
+            w_new = int(np.sqrt(total_pixels * 9 / 16))
+            h_new = int(w_new * 16 / 9)
+            buf = buf.reshape(h_new, w_new, 4)
+        else:
+            buf = buf.reshape(h, w, 4)
         buf = buf[:, :, 1:4]
         frame = cv2.cvtColor(buf, cv2.COLOR_RGB2BGR)
 
