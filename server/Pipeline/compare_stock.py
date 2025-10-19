@@ -41,8 +41,8 @@ def get_stock_data(ticker1: str, ticker2: str,
     df[f"{ticker1}_value"] = (df[ticker1] / df[ticker1].iloc[0]) * investment
     df[f"{ticker2}_value"] = (df[ticker2] / df[ticker2].iloc[0]) * investment
 
-    final1 = float(df.iloc[-1][f"{ticker1}_value"])
-    final2 = float(df.iloc[-1][f"{ticker2}_value"])
+    final1 = float(df[f"{ticker1}_value"].iloc[-1])
+    final2 = float(df[f"{ticker2}_value"].iloc[-1])
     gain1 = (final1 / investment - 1) * 100
     gain2 = (final2 / investment - 1) * 100
 
