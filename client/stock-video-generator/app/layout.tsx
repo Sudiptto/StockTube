@@ -9,7 +9,7 @@ const _geist = Geist({ subsets: ["latin"] })
 const _geistMono = Geist_Mono({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "StockViral - Create Viral Stock Videos",
+  title: "StockTube - Create Viral Stock Videos",
   description: "Generate engaging stock comparison videos for social media",
   generator: "v0.app",
 }
