@@ -8,26 +8,153 @@ import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { CalendarIcon, Download, Share2, Sparkles } from "lucide-react"
+import { CalendarIcon, Download, Share2, Sparkles, Youtube } from "lucide-react"
 import { format } from "date-fns"
 import { cn } from "@/lib/utils"
 import { VideoPreview } from "@/components/video-preview"
 import { Film } from "lucide-react" // Declared Film variable here
 
 export function VideoCreationStudio() {
-  const [stock1, setStock1] = React.useState("")
-  const [stock2, setStock2] = React.useState("")
-  const [startDate, setStartDate] = React.useState<Date>()
-  const [endDate, setEndDate] = React.useState<Date>()
-  const [timeline, setTimeline] = React.useState("daily")
-  const [investment, setInvestment] = React.useState("1000")
-  const [duration, setDuration] = React.useState("30")
-  const [template, setTemplate] = React.useState("subway")
+  const [stock1, setStock1] = React.useState("NFLX")
+  const [stock2, setStock2] = React.useState("DIS")
+  const [startDate, setStartDate] = React.useState<Date>(new Date("2023-06-01"))
+  const [endDate, setEndDate] = React.useState<Date>(new Date("2024-12-31"))
+  const [timeline, setTimeline] = React.useState("weekly")
+  const [investment, setInvestment] = React.useState("500")
+  const [duration, setDuration] = React.useState("10")
   const [showPreview, setShowPreview] = React.useState(false)
   const [isLoadingAI, setIsLoadingAI] = React.useState(false)
+  const [isLoading, setIsLoading] = React.useState(false)
+  const [videoUrl, setVideoUrl] = React.useState<string | null>(null)
+  const [error, setError] = React.useState<string | null>(null)
+  const [isYoutubeUploading, setIsYoutubeUploading] = React.useState(false)
+  const [youtubeAuthUrl, setYoutubeAuthUrl] = React.useState<string | null>(null)
+  const [youtubeSuccess, setYoutubeSuccess] = React.useState<string | null>(null)
 
-  const handleGenerate = () => {
-    setShowPreview(true)
+  const handleGenerate = async () => {
+    if (!stock1 || !stock2 || !startDate || !endDate) {
+      setError("Please fill in all required fields")
+      return
+    }
+
+    setIsLoading(true)
+    setError(null)
+    setVideoUrl(null)
+
+    try {
+      const payload = {
+        stock1: stock1.toUpperCase(),
+        stock2: stock2.toUpperCase(),
+        start_date: format(startDate, "yyyy-MM-dd"),
+        end_date: format(endDate, "yyyy-MM-dd"),
+        daily_freq: timeline,
+        "one-time-investment": parseInt(investment),
+        vid_duration: parseInt(duration)
+      }
+
+      const response = await fetch("http://127.0.0.1:5000/stock_req", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      })
+
+      const data = await response.json()
+
+      if (data.status === "success") {
+        setVideoUrl(data.video_url)
+        setShowPreview(true)
+      } else {
+        setError(data.message || "Failed to generate video")
+      }
+    } catch (err) {
+      setError("Failed to connect to the API. Make sure the server is running.")
+      console.error("API Error:", err)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleYoutubeUpload = async () => {
+    if (!videoUrl) {
+      setError("No video available to upload")
+      return
+    }
+
+    setIsYoutubeUploading(true)
+    setError(null)
+    setYoutubeSuccess(null)
+
+    try {
+      // First, get the YouTube auth URL
+      const authResponse = await fetch("http://127.0.0.1:5000/youtube_auth", {
+        method: "GET",
+      })
+
+      if (!authResponse.ok) {
+        throw new Error("Failed to get YouTube auth URL")
+      }
+
+      const authData = await authResponse.json()
+      
+      if (authData.auth_url) {
+        // Open YouTube OAuth in a popup window
+        const popup = window.open(
+          authData.auth_url,
+          'youtube-auth',
+          'width=600,height=600,scrollbars=yes,resizable=yes'
+        )
+
+        // Listen for the popup to close
+        const checkClosed = setInterval(async () => {
+          if (popup?.closed) {
+            clearInterval(checkClosed)
+            
+            // Wait a moment for the callback to process
+            setTimeout(async () => {
+              try {
+                // Now attempt to upload the video
+                const uploadResponse = await fetch("http://127.0.0.1:5000/youtube_upload", {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({
+                    video_url: videoUrl,
+                    title: `${stock1} vs ${stock2} Stock Comparison`,
+                    description: `Stock comparison video between ${stock1} and ${stock2} from ${format(startDate, "MMM dd, yyyy")} to ${format(endDate, "MMM dd, yyyy")}. Generated by StockTube.`
+                  }),
+                })
+
+                const uploadData = await uploadResponse.json()
+
+                if (uploadData.status === "success") {
+                  // Show success message
+                  setError(null)
+                  setYoutubeSuccess(`Video uploaded successfully! YouTube URL: ${uploadData.youtube_url}`)
+                  // Clear success message after 10 seconds
+                  setTimeout(() => setYoutubeSuccess(null), 10000)
+                } else {
+                  setError(uploadData.message || "Failed to upload to YouTube")
+                }
+              } catch (uploadErr) {
+                setError("Failed to upload video to YouTube")
+                console.error("Upload Error:", uploadErr)
+              } finally {
+                setIsYoutubeUploading(false)
+              }
+            }, 2000)
+          }
+        }, 1000)
+      } else {
+        throw new Error("No auth URL received")
+      }
+    } catch (err) {
+      setError("Failed to initiate YouTube upload. Make sure the server is running.")
+      console.error("YouTube Upload Error:", err)
+      setIsYoutubeUploading(false)
+    }
   }
 
   const handleAISuggestions = () => {
@@ -251,24 +378,13 @@ export function VideoCreationStudio() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="template">Background Template</Label>
-              <Select value={template} onValueChange={setTemplate}>
-                <SelectTrigger id="template">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="subway">Subway Surfer</SelectItem>
-                  <SelectItem value="minecraft">Minecraft</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
               <Label htmlFor="duration">Video Duration (seconds)</Label>
               <Select value={duration} onValueChange={setDuration}>
                 <SelectTrigger id="duration">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="10">10 seconds</SelectItem>
                   <SelectItem value="15">15 seconds</SelectItem>
                   <SelectItem value="30">30 seconds</SelectItem>
                   <SelectItem value="45">45 seconds</SelectItem>
@@ -285,17 +401,53 @@ export function VideoCreationStudio() {
               <Sparkles className="mr-2 h-4 w-4" />
               {isLoadingAI ? "Getting Smart Suggestions..." : "Get Smart Suggestions"}
             </Button>
-            <Button className="w-full" size="lg" onClick={handleGenerate}>
-              Generate Video
+            <Button 
+              className="w-full" 
+              size="lg" 
+              onClick={handleGenerate}
+              disabled={isLoading}
+            >
+              {isLoading ? "Generating Video..." : "Generate Video"}
             </Button>
+            {error && (
+              <div className="text-sm text-red-500 bg-red-50 p-3 rounded-md">
+                {error}
+              </div>
+            )}
+            {youtubeSuccess && (
+              <div className="text-sm text-green-600 bg-green-50 p-3 rounded-md">
+                {youtubeSuccess}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
 
       <div className="space-y-6">
-        {showPreview ? (
+        {isLoading ? (
+          <Card className="flex h-[600px] items-center justify-center">
+            <CardContent className="text-center">
+              <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-primary mx-auto"></div>
+              <p className="mt-4 text-lg font-medium">Loading...</p>
+              <p className="text-sm text-muted-foreground">Generating your video, please wait</p>
+            </CardContent>
+          </Card>
+        ) : showPreview && videoUrl ? (
           <>
-            <VideoPreview stock1={stock1 || "MSFT"} stock2={stock2 || "GOOG"} template={template} />
+            <Card className="overflow-hidden">
+              <CardContent className="p-0">
+                <div className="relative aspect-[9/16] bg-black">
+                  <video 
+                    src={videoUrl} 
+                    controls 
+                    className="w-full h-full object-cover"
+                    poster=""
+                  >
+                    Your browser does not support the video tag.
+                  </video>
+                </div>
+              </CardContent>
+            </Card>
             <Card>
               <CardHeader>
                 <CardTitle className="gradient-text">Export Options</CardTitle>
@@ -303,11 +455,23 @@ export function VideoCreationStudio() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid gap-3">
-                  <Button className="w-full bg-transparent" variant="outline">
+                  <Button 
+                    className="w-full bg-transparent" 
+                    variant="outline"
+                    onClick={() => window.open(videoUrl, '_blank')}
+                  >
                     <Download className="mr-2 h-4 w-4" />
                     Download Video
                   </Button>
-                  <div className="grid gap-2 sm:grid-cols-3">
+                  <Button 
+                    className="w-full bg-red-600 hover:bg-red-700 text-white" 
+                    onClick={handleYoutubeUpload}
+                    disabled={isYoutubeUploading}
+                  >
+                    <Youtube className="mr-2 h-4 w-4" />
+                    {isYoutubeUploading ? "Uploading to YouTube..." : "Upload to YouTube"}
+                  </Button>
+                  <div className="grid gap-2 sm:grid-cols-2">
                     <Button variant="outline" size="sm">
                       <Share2 className="mr-2 h-4 w-4" />
                       TikTok (9:16)
@@ -315,10 +479,6 @@ export function VideoCreationStudio() {
                     <Button variant="outline" size="sm">
                       <Share2 className="mr-2 h-4 w-4" />
                       Instagram (9:16)
-                    </Button>
-                    <Button variant="outline" size="sm">
-                      <Share2 className="mr-2 h-4 w-4" />
-                      YouTube (16:9)
                     </Button>
                   </div>
                 </div>
